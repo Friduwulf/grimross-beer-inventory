@@ -22,13 +22,37 @@ var databaseArray = databaseSheet.getRange(1,1,databaseSheetLR,databaseSheetLC).
 
 
 function onEdit(e) {
-    if(e.value === 'Sold'){
-    var row = e.range.getRow();
-    var customerLC = row.getLastColumn();
-    var customerCell = inputSheet.getRange(row,customerLC);
-
-    customerCell.setBackgroundRGB(255,100,50)
+    //gets the range of the edited cell
+  var range = e.range;
+    //gets the column number of the edited cell
+  var column = range.getColumn();
+    //gets the row number of the edited cell
+  var row = e.range.getRow();
+    //gets the exact cell edited
+  var cell = e.source.getActiveRange();
+    //If the 'Change Type' is set to 'Sold', replaces checkbox with 'Please Select A Customer' and sets the customer cell to white, and gives it a dropdown of the available customers.
+  if(e.value === 'Sold') {
+    var customerCell = inputSheet.getRange(row,10);
+    var validationRange = spreadsheet.getSheetByName('Helper').getRange('B2:B');
+    var checkboxCell = inputSheet.getRange(row,9);
+      //Reveals 'Customer' field at the end of the row where 'Sold' was selected.
+    customerCell.setBackgroundRGB(255,255,255);
+      //Set the data-validation rule for 'Customer' field to require a value from 'Helper' sheet, range B2:B.
+    var rule = SpreadsheetApp.newDataValidation().requireValueInRange(validationRange).build();
+    customerCell.setDataValidation(rule);
+    checkboxCell.removeCheckboxes().setValue('Please Select A Customer');
   }
+      //If the customer is selected, the message is removed, and checkbox is inserted.
+  if(column == 10 && row <= 7 && e.value != '') {
+    var checkboxCell = inputSheet.getRange(row,9);
+    checkboxCell.clearContent().insertCheckboxes();
+  }
+      //If the customer field is made blank again, this removes the checkbox and reinstates the 'Please Select A Customer' message.
+  if(column == 10 && row <= 7 && cell.isBlank()) {
+    var checkboxCell = inputSheet.getRange(row,9);
+    checkboxCell.removeCheckboxes().setValue('Please Select A Customer');
+  }
+    //When the Checkbox is ticked, send data to the 'database' sheet in an orientation and transformation that depends on the inventory type field.
   if(e.value === 'TRUE') {
     var row = e.range.getRow();
     var inputArray = inputSheet.getRange(row,1,1,inputSheetLC).getValues();
@@ -50,8 +74,9 @@ function onEdit(e) {
     }
         //if the selected inventory option is 'Sold' open gather the relevant data, changes the inventory values to negative, and then copies it to the database sheet, along with selected 'Customer'.
     if(inputArray[0][0] === 'Sold') {
-      var inventoryChange = inputArray.map(function(r){return [r[1],r[2],r[3] *-1,r[4] *-1,r[5] *-1,r[6] *-1,r[7] *-1,r[0],r[9]]; });
+      var inventoryChange = inputArray.map(function(r){return [r[1],r[2],r[3] *-1,r[4] *-1,r[5] *-1,r[6] *-1,r[7] *-1,r[0],'','',r[9]]; });
       databaseSheet.getRange(databaseSheetLR+1,1,1,inventoryChange[0].length).setValues(inventoryChange);
+      inputSheet.getRange(row,inputSheetLC).clearDataValidations().setBackgroundRGB(0,0,0);
       }
       //Clears the input data from the input sheet
      inputRange.clearContent();
