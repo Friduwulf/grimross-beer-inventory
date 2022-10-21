@@ -30,9 +30,11 @@ function onEdit(e) {
   var row = e.range.getRow();
     //gets the exact cell edited
   var cell = e.source.getActiveRange();
+    //gets the change type range for the edited cell's row.
+  var changeTypeCell = inputSheet.getRange(row,1);
+  var customerCell = inputSheet.getRange(row,10);
     //If the 'Change Type' is set to 'Sold', replaces checkbox with 'Please Select A Customer' and sets the customer cell to white, and gives it a dropdown of the available customers.
   if(e.value === 'Sold') {
-    var customerCell = inputSheet.getRange(row,10);
     var validationRange = spreadsheet.getSheetByName('Helper').getRange('B2:B');
     var checkboxCell = inputSheet.getRange(row,9);
       //Reveals 'Customer' field at the end of the row where 'Sold' was selected.
@@ -43,14 +45,24 @@ function onEdit(e) {
     checkboxCell.removeCheckboxes().setValue('Please Select A Customer');
   }
       //If the customer is selected, the message is removed, and checkbox is inserted.
-  if(column == 10 && row <= 7 && e.value != '') {
-    var checkboxCell = inputSheet.getRange(row,9);
-    checkboxCell.clearContent().insertCheckboxes();
+    if(column == 10 && row <= 7 && e.value != '') {
+      var checkboxCell = inputSheet.getRange(row,9);
+      checkboxCell.clearContent().insertCheckboxes();
   }
       //If the customer field is made blank again, this removes the checkbox and reinstates the 'Please Select A Customer' message.
-  if(column == 10 && row <= 7 && cell.isBlank()) {
+    if(column == 10 && row <= 7 && cell.isBlank()) {
+      var checkboxCell = inputSheet.getRange(row,9);
+      checkboxCell.removeCheckboxes().setValue('Please Select A Customer');
+  }
+    //If Sold is selected but no customer, and 'Please Select A Customer' is removed or overwritten, reinsert it.
+    if(column == 9 && row <= 7 && changeTypeCell.getValue() === 'Sold' && e.value != 'Please Select Customer' && e.value != 'TRUE') {
+      var checkboxCell = inputSheet.getRange(row,9);
+      checkboxCell.clearContent().setValue('Please Select A Customer');
+  }
+  if(column == 1 && e.value != 'Sold'){
     var checkboxCell = inputSheet.getRange(row,9);
-    checkboxCell.removeCheckboxes().setValue('Please Select A Customer');
+    checkboxCell.clearContent().insertCheckboxes();
+    customerCell.clearDataValidations().setBackgroundRGB(0,0,0);
   }
     //When the Checkbox is ticked, send data to the 'database' sheet in an orientation and transformation that depends on the inventory type field.
   if(e.value === 'TRUE') {
